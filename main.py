@@ -5,7 +5,8 @@ import cv2
 
 def render_subtitles(
         segments: list[dict], video_input_path: str,
-        video_output_path: str, subtitle_settings: dict, effect=None, effect_params: dict = None
+        video_output_path: str, subtitle_settings: dict,
+        effect=None, effect_params: dict = None
 ):
     vid_capture = cv2.VideoCapture(video_input_path)
     width = int(vid_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -16,7 +17,9 @@ def render_subtitles(
         video_output_path, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), fps, (width, height)
     )
 
-    subtitle_stream = SubtitleStream(segments, width, height, fps, subtitle_settings, effect, effect_params)
+    subtitle_stream = SubtitleStream(
+        segments, width, height, fps, subtitle_settings, effect, effect_params
+    )
 
     while vid_capture.isOpened():
         ret, frame = vid_capture.read()
@@ -29,17 +32,25 @@ def render_subtitles(
 if __name__ == '__main__':
     from config import PRESETS
     import json
-    from effects import fade_effect
+    from effects import fade_effect, bouncing_effect
 
     test_video_path = "test_video/IMG_2073.MOV"
-    out_video_path = "test_video/test_8.mp4"
+    out_video_path = "test_video/test_12.mp4"
     result_path = "/home/jjjj/Documents/render_subtitles/test_video/test_2.json"
     with open(result_path, "r") as t:
         result = json.load(t)
 
     preset = PRESETS["default"]
 
+    # render_subtitles(
+    #     result["data"]["segments"], test_video_path, out_video_path, preset,
+    #     fade_effect, {"fadein": 0.1, "fadeout": 0.1}
+    # )
+
     render_subtitles(
         result["data"]["segments"], test_video_path, out_video_path, preset,
-        fade_effect, {"fadein": 1, "fadeout": 1}
+        bouncing_effect, {
+            "maximum_font": 1.2, "minimum_font": 0.85, "end_font": 1.0,
+            "bounce_up": 0.2, "bounce_normal": 0.1
+        }
     )

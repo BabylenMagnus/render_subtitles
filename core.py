@@ -10,16 +10,29 @@ class TextSubtitle:
 
     def __init__(
             self, text: str, width: int, height: int, x_spacing: float, width_part: float,
-            font: str, fontsize: float, color: list = [0, 0, 0, 255]
+            font: str, fontsize: float, color: list = [0, 0, 0, 255], h_space: int = 0.005
     ):
         self.text = text
-        self.width = int(width * width_part)
+        self.width_text = int(width * width_part)
+
+        self.width = width
+        self.height = height
+
         self.x_spacing = height - int(x_spacing * height)
 
-        self.font = ImageFont.truetype(os.path.join(FONT_PATH, font), int(height * fontsize))
+        self.font_path = os.path.join(FONT_PATH, font)
+        self.font_size = int(height * fontsize)
+        self.h_space = int(height * h_space)
+
+        self.font = ImageFont.truetype(self.font_path, self.font_size)
         self.color = color if len(color) == 4 else color + [255]
 
-    def break_fix(self, text, font, draw):
+        self.pieces = None
+        self.y_start = None
+
+        self.calculate_pieces()
+
+    def break_fix(self, text, draw):
         """
         Fix line breaks in text.
         """
@@ -30,27 +43,34 @@ class TextSubtitle:
         lo = 0
         hi = len(text)
         if hi == 1:
-            left, top, right, bottom = draw.textbbox((0, 0), text[0], font=font)
+            left, top, right, bottom = draw.textbbox((0, 0), text[0], font=self.font)
             yield text[0], right - left, bottom - top
         else:
             while lo < hi:
                 mid = (lo + hi + 1) // 2
                 temp_text = ' '.join(text[:mid])  # this makes a string again
-                left, top, right, bottom = draw.textbbox((0, 0), temp_text, font=font)
+                left, top, right, bottom = draw.textbbox((0, 0), temp_text, font=self.font)
 
-                if right - left <= self.width:
+                if right - left <= self.width_text:
                     lo = mid
                 else:
                     hi = mid - 1
 
-                if right - left <= self.width and len(temp_text.split(" ")) == 1:
+                if right - left <= self.width_text and len(temp_text.split(" ")) == 1:
                     break
 
             temp_text = ' '.join(text[:lo])  # this makes a string again
-            left, top, right, bottom = draw.textbbox((0, 0), temp_text, font=font)
+            left, top, right, bottom = draw.textbbox((0, 0), temp_text, font=self.font)
 
             yield temp_text, right - left, bottom - top
-            yield from self.break_fix(text[lo:], font, draw)
+            yield from self.break_fix(text[lo:], draw)
+
+    def calculate_pieces(self):
+        txt_layer = Image.new("RGBA", (self.width, self.height), (255, 255, 255, 0))
+        draw = ImageDraw.Draw(txt_layer)
+
+        self.pieces = list(self.break_fix(self.text, draw))
+        self.y_start = self.x_spacing - sum(p[2] for p in self.pieces)
 
     def fit_text(self, img):
         """
@@ -60,16 +80,17 @@ class TextSubtitle:
         """
         txt_layer = Image.new("RGBA", img.size, (255, 255, 255, 0))
         draw = ImageDraw.Draw(txt_layer)
-        pieces = list(self.break_fix(self.text, self.font, draw))
-        height = sum(p[2] for p in pieces)
-        y = self.x_spacing - height
 
         h_taken_by_text = 0
-        for t, w, h in pieces:
-            x = (img.size[0] - w) // 2
+
+        y = self.y_start
+
+        for t, w, h in self.pieces:
+            left, top, right, bottom = draw.textbbox((0, 0), t, font=self.font)
+            x = (img.size[0] - (right - left)) // 2
             draw.text((x, y), t, font=self.font, fill=tuple(self.color))
             left, top, right, bottom = draw.textbbox((0, 0), t, font=self.font)
-            y += h
+            y += h + self.h_space
             h_taken_by_text += bottom - top
 
         img = Image.alpha_composite(img, txt_layer)
