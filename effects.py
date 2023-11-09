@@ -17,8 +17,11 @@ def fade_effect(
     def effect(i, subtitle: TextSubtitle):
         if start <= i < start + fadein:
             subtitle.color[-1] = int(fadein_list[i - start] * 255)
+            subtitle.second_color[-1] = int(fadein_list[i - start] * 255)
         if end - fadeout <= i < end:
             subtitle.color[-1] = int(fadeout_list[i - (end - fadeout)] * 255)
+            subtitle.second_color[-1] = int(fadeout_list[i - (end - fadeout)] * 255)
+
         return subtitle
 
     return effect

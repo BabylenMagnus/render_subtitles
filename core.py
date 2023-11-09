@@ -122,12 +122,20 @@ class FragmentSubtitle:
 
         self.subtitle = TextSubtitle(text, words, width, height, **subtitle_settings)
 
-        self.effect = None if effect is None else effect(self.start, self.end, fps, **effect_params)
+        self.effects = []
+        if isinstance(effect, list):
+            for ef, params in zip(effect, effect_params):
+                self.effects.append(ef(self.start, self.end, fps, **params))
+        elif effect is None:
+            self.effects = None
+        else:
+            self.effects.append(effect(self.start, self.end, fps, **effect_params))
 
     def __call__(self, i: int, frame: np.array):
         if self.start <= i <= self.end:
-            if self.effect is not None:
-                self.subtitle = self.effect(i, self.subtitle)
+            if self.effects is not None:
+                for effect in self.effects:
+                    self.subtitle = effect(i, self.subtitle)
             return self.subtitle(frame)
         return frame
 
