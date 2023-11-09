@@ -2,17 +2,19 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import os
 
-from config import FONT_PATH
+from config import FONT_PATH, SPLIT_CHAR
 
 
 class TextSubtitle:
     font: None
 
     def __init__(
-            self, text: str, width: int, height: int, x_spacing: float, width_part: float,
-            font: str, fontsize: float, color: list = [0, 0, 0, 255], h_space: int = 0.005
+            self, text: str, words: list[dict], width: int, height: int, x_spacing: float,
+            width_part: float, font: str, fontsize: float, color: list = [0, 0, 0, 255],
+            second_color: list = [0, 128, 0, 255], h_space: int = 0.005
     ):
         self.text = text
+        self.words = words
         self.width_text = int(width * width_part)
 
         self.width = width
@@ -26,6 +28,7 @@ class TextSubtitle:
 
         self.font = ImageFont.truetype(self.font_path, self.font_size)
         self.color = color if len(color) == 4 else color + [255]
+        self.second_color = second_color if len(second_color) == 4 else second_color + [255]
 
         self.pieces = None
         self.y_start = None
@@ -70,6 +73,7 @@ class TextSubtitle:
         draw = ImageDraw.Draw(txt_layer)
 
         self.pieces = list(self.break_fix(self.text, draw))
+        self.pieces = [list(i) for i in self.pieces]
         self.y_start = self.x_spacing - sum(p[2] for p in self.pieces)
 
     def fit_text(self, img):
@@ -81,17 +85,20 @@ class TextSubtitle:
         txt_layer = Image.new("RGBA", img.size, (255, 255, 255, 0))
         draw = ImageDraw.Draw(txt_layer)
 
-        h_taken_by_text = 0
-
         y = self.y_start
 
-        for t, w, h in self.pieces:
-            left, top, right, bottom = draw.textbbox((0, 0), t, font=self.font)
+        for temp_text, w, h in self.pieces:
+
+            left, top, right, bottom = draw.textbbox((0, 0), temp_text.replace(SPLIT_CHAR, ""), font=self.font)
             x = (img.size[0] - (right - left)) // 2
-            draw.text((x, y), t, font=self.font, fill=tuple(self.color))
-            left, top, right, bottom = draw.textbbox((0, 0), t, font=self.font)
+            w_start = x
+
+            for i, t in enumerate(temp_text.split(SPLIT_CHAR)):
+                draw.text((w_start, y), t, font=self.font, fill=tuple([self.color, self.second_color][i % 2]))
+                left, top, right, bottom = draw.textbbox((0, 0), t, font=self.font)
+                w_start += right - left
+
             y += h + self.h_space
-            h_taken_by_text += bottom - top
 
         img = Image.alpha_composite(img, txt_layer)
 
@@ -108,12 +115,12 @@ class TextSubtitle:
 class FragmentSubtitle:
     def __init__(
             self, start_time, end_time, width: int, height: int, fps: float,
-            text: str, subtitle_settings: dict, effect=None, effect_params: dict = None
+            text: str, words: list[dict], subtitle_settings: dict, effect=None, effect_params: dict = None
     ):
         self.start = int(start_time * fps)
         self.end = int(end_time * fps)
 
-        self.subtitle = TextSubtitle(text, width, height, **subtitle_settings)
+        self.subtitle = TextSubtitle(text, words, width, height, **subtitle_settings)
 
         self.effect = None if effect is None else effect(self.start, self.end, fps, **effect_params)
 
@@ -132,7 +139,7 @@ class SubtitleStream:
     ):
         self.segments = [
             FragmentSubtitle(
-                seg["start"], seg["end"], width, height, fps, seg["text"],
+                seg["start"], seg["end"], width, height, fps, seg["text"], seg["words"],
                 subtitle_settings, effect, effect_params
             )
             for seg in segments

@@ -2,6 +2,7 @@ import numpy as np
 from PIL import ImageFont
 
 from core import TextSubtitle
+from config import SPLIT_CHAR
 
 
 def fade_effect(
@@ -18,8 +19,6 @@ def fade_effect(
             subtitle.color[-1] = int(fadein_list[i - start] * 255)
         if end - fadeout <= i < end:
             subtitle.color[-1] = int(fadeout_list[i - (end - fadeout)] * 255)
-
-        i += 1
         return subtitle
 
     return effect
@@ -46,8 +45,32 @@ def bouncing_effect(
                 subtitle.font_path,
                 subtitle.font_size * bounce_normal_list[i - (end - bounce_normal)]
             )
+        return subtitle
 
-        i += 1
+    return effect
+
+
+def words_lead_effect(
+        start: int, end: int, fps: int, karaoke: bool = False
+):
+    def effect(i, subtitle: TextSubtitle):
+        out_text = []
+        w = [word["word"].strip() for word in subtitle.words]
+
+        for piece_ in subtitle.pieces:
+            piece_ = piece_[0].replace(SPLIT_CHAR, "").split()
+            start_i, end_i = w.index(piece_[0]), w.index(piece_[-1]) + 1
+            out_text.append("")
+
+            for word in subtitle.words[start_i: end_i]:
+                if word["start"] * fps <= i:
+                    if i <= word["end"] * fps or karaoke:
+                        out_text[-1] += SPLIT_CHAR + word["word"] + SPLIT_CHAR
+                else:
+                    out_text[-1] += word["word"]
+
+        for i in range(len(subtitle.pieces)):
+            subtitle.pieces[i][0] = out_text[i]
         return subtitle
 
     return effect
