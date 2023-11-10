@@ -53,7 +53,7 @@ if __name__ == '__main__':
     from effects import fade_effect, bouncing_effect, words_lead_effect
 
     test_video_path = "test_video/IMG_2073.MOV"
-    out_video_path = "test_video/test_16.mp4"
+    out_video_path = "test_video/test_19.mp4"
     result_path = "test_video/test_2.json"
     with open(result_path, "r") as t:
         result = json.load(t)

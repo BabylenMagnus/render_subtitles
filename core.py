@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import numpy as np
 import os
 
@@ -9,13 +9,16 @@ class TextSubtitle:
     font: None
 
     def __init__(
-            self, text: str, words: list[dict], width: int, height: int, x_spacing: float,
-            width_part: float, font: str, fontsize: float, color: list = [0, 0, 0, 255],
-            second_color: list = [0, 128, 0, 255], h_space: int = 0.005
+            self, text: str, words: list[dict], width: int, height: int, x_spacing: float, width_part: float,
+            font: str, fontsize: float, color: list = [255, 255, 255, 255], second_color: list = [0, 128, 0, 255],
+            stroke_color: list = [0, 0, 0, 255], stroke: bool = False, stroke_part: float = 1.4, h_space: int = 0.005
     ):
         self.text = text
         self.words = words
         self.width_text = int(width * width_part)
+
+        self.stroke = stroke
+        self.stroke_part = stroke_part
 
         self.width = width
         self.height = height
@@ -27,8 +30,10 @@ class TextSubtitle:
         self.h_space = int(height * h_space)
 
         self.font = ImageFont.truetype(self.font_path, self.font_size)
+
         self.color = color if len(color) == 4 else color + [255]
         self.second_color = second_color if len(second_color) == 4 else second_color + [255]
+        self.stroke_color = stroke_color if len(stroke_color) == 4 else stroke_color + [255]
 
         self.pieces = None
         self.y_start = None
@@ -94,7 +99,13 @@ class TextSubtitle:
             w_start = x
 
             for i, t in enumerate(temp_text.split(SPLIT_CHAR)):
-                draw.text((w_start, y), t, font=self.font, fill=tuple([self.color, self.second_color][i % 2]))
+                if self.stroke:
+                    draw.text(
+                        (w_start, y), t, font=self.font, fill=tuple([self.color, self.second_color][i % 2]),
+                        stroke_fill=tuple(self.stroke_color), stroke_width=int(self.font_size * self.stroke_part)
+                    )
+                else:
+                    draw.text((w_start, y), t, font=self.font, fill=tuple([self.color, self.second_color][i % 2]))
                 left, top, right, bottom = draw.textbbox((0, 0), t, font=self.font)
                 w_start += right - left
 
