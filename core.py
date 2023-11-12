@@ -3,7 +3,6 @@ import numpy as np
 import os
 
 from config import FONT_PATH, SPLIT_CHAR
-import pickle
 
 
 class TextSubtitle:
@@ -164,11 +163,6 @@ class FragmentSubtitle:
         self.end = int(end_time * fps)
 
         self.subtitle = TextSubtitle(text, words, width, height, **subtitle_settings)
-
-        # with open('file.pkl', 'wb') as file:
-        #     pickle.dump(self.subtitle, file)
-        #
-        # x = 2 / 0
 
         self.effects = []
         if isinstance(effect, list):
