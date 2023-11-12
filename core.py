@@ -3,6 +3,7 @@ import numpy as np
 import os
 
 from config import FONT_PATH, SPLIT_CHAR
+import pickle
 
 
 class TextSubtitle:
@@ -11,7 +12,8 @@ class TextSubtitle:
     def __init__(
             self, text: str, words: list[dict], width: int, height: int, x_spacing: float, width_part: float,
             font: str, fontsize: float, color: list = [255, 255, 255, 255], second_color: list = [0, 128, 0, 255],
-            stroke_color: list = [0, 0, 0, 255], stroke: bool = False, stroke_part: float = 1.4, h_space: int = 0.005
+            stroke_color: list = [0, 0, 0, 255], stroke: bool = False, stroke_part: float = 1.4, h_space: int = 0.005,
+            rotation_degrees: float = 0.0
     ):
         self.text = text
         self.words = words
@@ -37,7 +39,9 @@ class TextSubtitle:
 
         self.pieces = None
         self.y_start = None
+        self.text_height = None
 
+        self.rotation_degrees = rotation_degrees
         self.calculate_pieces()
 
     def break_fix(self, text, draw):
@@ -57,7 +61,10 @@ class TextSubtitle:
             while lo < hi:
                 mid = (lo + hi + 1) // 2
                 temp_text = ' '.join(text[:mid])  # this makes a string again
-                left, top, right, bottom = draw.textbbox((0, 0), temp_text, font=self.font)
+                left, top, right, bottom = draw.textbbox(
+                    (0, 0), temp_text, font=self.font,
+                    stroke_width=int(self.font_size * self.stroke_part * int(self.stroke))
+                )
 
                 if right - left <= self.width_text:
                     lo = mid
@@ -79,7 +86,8 @@ class TextSubtitle:
 
         self.pieces = list(self.break_fix(self.text, draw))
         self.pieces = [list(i) for i in self.pieces]
-        self.y_start = self.x_spacing - sum(p[2] for p in self.pieces)
+        self.text_height = sum(p[2] for p in self.pieces)
+        self.y_start = self.x_spacing - self.text_height
 
     def fit_text(self, img):
         """
@@ -92,24 +100,48 @@ class TextSubtitle:
 
         y = self.y_start
 
+        if self.rotation_degrees != 0:
+            rotated_img = Image.new(
+                'RGBA',
+                (self.width_text, int(self.text_height + self.text_height * self.stroke_part * 2)),
+                (255, 255, 255, 0)
+            )
+            rotated_draw = ImageDraw.Draw(rotated_img)
+            y = 0
+
         for temp_text, w, h in self.pieces:
 
-            left, top, right, bottom = draw.textbbox((0, 0), temp_text.replace(SPLIT_CHAR, ""), font=self.font)
-            x = (img.size[0] - (right - left)) // 2
+            left, top, right, bottom = draw.textbbox(
+                (0, 0), temp_text.replace(SPLIT_CHAR, ""), font=self.font,
+                stroke_width=int(self.font_size * self.stroke_part * int(self.stroke))
+            )
+            x = (self.width_text - (right - left)) // 2 if self.rotation_degrees != 0 else (
+                    (img.size[0] - (right - left)) // 2
+            )
             w_start = x
 
             for i, t in enumerate(temp_text.split(SPLIT_CHAR)):
-                if self.stroke:
-                    draw.text(
+                left, top, right, bottom = draw.textbbox((0, 0), t, font=self.font)
+
+                if self.rotation_degrees != 0:
+                    rotated_draw.text(
                         (w_start, y), t, font=self.font, fill=tuple([self.color, self.second_color][i % 2]),
-                        stroke_fill=tuple(self.stroke_color), stroke_width=int(self.font_size * self.stroke_part)
+                        stroke_fill=tuple(self.stroke_color),
+                        stroke_width=int(self.font_size * self.stroke_part * int(self.stroke))
                     )
                 else:
-                    draw.text((w_start, y), t, font=self.font, fill=tuple([self.color, self.second_color][i % 2]))
-                left, top, right, bottom = draw.textbbox((0, 0), t, font=self.font)
+                    draw.text(
+                        (w_start, y), t, font=self.font, fill=tuple([self.color, self.second_color][i % 2]),
+                        stroke_fill=tuple(self.stroke_color),
+                        stroke_width=int(self.font_size * self.stroke_part * int(self.stroke))
+                    )
                 w_start += right - left
 
             y += h + self.h_space
+
+        if self.rotation_degrees != 0:
+            rotated_img = rotated_img.rotate(self.rotation_degrees, expand=1)
+            txt_layer.paste(rotated_img, (0, self.y_start - rotated_img.size[1]), rotated_img)
 
         img = Image.alpha_composite(img, txt_layer)
 
@@ -132,6 +164,11 @@ class FragmentSubtitle:
         self.end = int(end_time * fps)
 
         self.subtitle = TextSubtitle(text, words, width, height, **subtitle_settings)
+
+        # with open('file.pkl', 'wb') as file:
+        #     pickle.dump(self.subtitle, file)
+        #
+        # x = 2 / 0
 
         self.effects = []
         if isinstance(effect, list):

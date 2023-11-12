@@ -5,7 +5,8 @@ PRESETS = {
         "width_part": 0.9,
         "x_spacing": 0.1,
         "stroke": True,
-        "stroke_part": 0.3
+        "stroke_part": 0.2,
+        "rotation_degrees": 0
     }
 }
 
