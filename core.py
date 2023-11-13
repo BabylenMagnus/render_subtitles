@@ -154,7 +154,7 @@ class TextSubtitle:
 
         if self.rotation_degrees != 0:
             rotated_img = rotated_img.rotate(self.rotation_degrees, expand=1)
-            txt_layer.paste(rotated_img, (0, self.y_start - rotated_img.size[1]), rotated_img)
+            txt_layer.paste(rotated_img, (0, self.x_spacing - rotated_img.size[1] // 2), rotated_img)
 
         img = Image.alpha_composite(img, txt_layer)
 

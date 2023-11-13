@@ -1,3 +1,4 @@
+import random
 import numpy as np
 from PIL import ImageFont
 
@@ -5,7 +6,7 @@ from core import TextSubtitle
 from config import SPLIT_CHAR
 
 
-__all__ = ['fade_effect', 'bouncing_effect', 'words_lead_effect']
+__all__ = ['fade_effect', 'bouncing_effect', 'words_lead_effect', 'rotation_effect']
 
 
 def fade_effect(
@@ -76,3 +77,17 @@ def words_lead_effect(
         return subtitle
 
     return effect
+
+
+def rotation_effect(
+        start: int, end: int, fps: int, maximum_rotation: float = 25.0
+):
+    possible_rotation = [i for i in range(1, maximum_rotation)] + [360 - i for i in range(1, maximum_rotation)]
+    degree = random.choice(possible_rotation)
+
+    def effect(i, subtitle: TextSubtitle):
+        subtitle.rotation_degrees = degree
+        return subtitle
+
+    return effect
+

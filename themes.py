@@ -19,9 +19,15 @@ THEMES = {
     "HORMOZI 1": {
         "font": "Montserrat-VariableFont_wght.ttf",
         "fontsize": 0.04,
-        "x_spacing": 0.45,
+        "x_spacing": 0.3,
         "uppercase": True,
         "width_part": 0.9,
-        "font_variation": "ExtraBold"
+        "font_variation": "ExtraBold",
+        "stroke": True,
+        "stroke_part": 0.17,
+        "effect": [rotation_effect],
+        "effect_params": [
+            {"maximum_rotation": 30}
+        ]
     }
 }
