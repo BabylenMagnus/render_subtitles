@@ -22,8 +22,7 @@ def fix_words(segments: list[dict]):
 
 def render_subtitles(
         segments: list[dict], video_input_path: str,
-        video_output_path: str, subtitle_settings: dict,
-        effect=None, effect_params: dict = None
+        video_output_path: str, subtitle_settings: dict
 ):
     segments = fix_words(segments)
     vid_capture = cv2.VideoCapture(video_input_path)
@@ -36,7 +35,7 @@ def render_subtitles(
     )
 
     subtitle_stream = SubtitleStream(
-        segments, width, height, fps, subtitle_settings, effect, effect_params
+        segments, width, height, fps, subtitle_settings
     )
 
     while vid_capture.isOpened():
@@ -48,27 +47,22 @@ def render_subtitles(
 
 
 if __name__ == '__main__':
-    from config import PRESETS
+    from themes import THEMES
     import json
-    from effects import fade_effect, bouncing_effect, words_lead_effect
 
     test_video_path = "test_video/IMG_2073.MOV"
-    out_video_path = "test_video/test_22.mp4"
+    out_video_path = "test_video/test_24.mp4"
     result_path = "test_video/test_2.json"
     with open(result_path, "r") as t:
         result = json.load(t)
 
-    preset = PRESETS["default"]
+    preset = THEMES["HORMOZI 1"]
 
-    # render_subtitles(
+    # render_subtitles(n
     #     result["data"]["segments"], test_video_path, out_video_path, preset,
     #     fade_effect, {"fadein": 0.1, "fadeout": 0.1}
     # )
 
     render_subtitles(
-        result["data"]["segments"], test_video_path, out_video_path, preset,
-        [fade_effect, words_lead_effect], [
-            {"fadein": 0.25, "fadeout": 0.25},
-            {"karaoke": True}
-        ]
+        result["data"]["segments"], test_video_path, out_video_path, preset
     )

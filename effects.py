@@ -5,6 +5,9 @@ from core import TextSubtitle
 from config import SPLIT_CHAR
 
 
+__all__ = ['fade_effect', 'bouncing_effect', 'words_lead_effect']
+
+
 def fade_effect(
         start: int, end: int, fps: int, fadein: float, fadeout: float, start_point: float = 0.2
 ):
@@ -41,15 +44,9 @@ def bouncing_effect(
 
     def effect(i, subtitle: TextSubtitle):
         if start <= i < start + bounce_up:
-            subtitle.font = ImageFont.truetype(
-                subtitle.font_path,
-                subtitle.font_size * bounce_up_list[i - start]
-            )
+            subtitle.set_font(font_size=subtitle.font_size * bounce_up_list[i - start])
         if end - bounce_normal <= i < end:
-            subtitle.font = ImageFont.truetype(
-                subtitle.font_path,
-                subtitle.font_size * bounce_normal_list[i - (end - bounce_normal)]
-            )
+            subtitle.set_font(font_size=subtitle.font_size * bounce_normal_list[i - (end - bounce_normal)])
         return subtitle
 
     return effect

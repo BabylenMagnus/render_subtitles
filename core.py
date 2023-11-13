@@ -12,10 +12,13 @@ class TextSubtitle:
             self, text: str, words: list[dict], width: int, height: int, x_spacing: float, width_part: float,
             font: str, fontsize: float, color: list = [255, 255, 255, 255], second_color: list = [0, 128, 0, 255],
             stroke_color: list = [0, 0, 0, 255], stroke: bool = False, stroke_part: float = 1.4, h_space: int = 0.005,
-            rotation_degrees: float = 0.0
+            rotation_degrees: float = 0.0, uppercase: bool = False, font_variation: str = None
     ):
-        self.text = text
+        self.text = text.upper() if uppercase else text
         self.words = words
+        if uppercase:
+            for word in words:
+                word["text"] = word["word"].upper()
         self.width_text = int(width * width_part)
 
         self.stroke = stroke
@@ -30,7 +33,9 @@ class TextSubtitle:
         self.font_size = int(height * fontsize)
         self.h_space = int(height * h_space)
 
-        self.font = ImageFont.truetype(self.font_path, self.font_size)
+        self.font = None
+        self.font_variation = font_variation
+        self.set_font()
 
         self.color = color if len(color) == 4 else color + [255]
         self.second_color = second_color if len(second_color) == 4 else second_color + [255]
@@ -42,6 +47,15 @@ class TextSubtitle:
 
         self.rotation_degrees = rotation_degrees
         self.calculate_pieces()
+
+    def set_font(self, font_path=None, font_size=None, font_variation=None):
+        font_path = self.font_path if font_path is None else font_path
+        font_size = self.font_size if font_size is None else font_size
+        font_variation = self.font_variation if font_variation is None else font_variation
+
+        self.font = ImageFont.truetype(font_path, font_size)
+        if not font_variation is None:
+            self.font.set_variation_by_name(font_variation)
 
     def break_fix(self, text, draw):
         """
@@ -157,10 +171,13 @@ class TextSubtitle:
 class FragmentSubtitle:
     def __init__(
             self, start_time, end_time, width: int, height: int, fps: float,
-            text: str, words: list[dict], subtitle_settings: dict, effect=None, effect_params: dict = None
+            text: str, words: list[dict], subtitle_settings: dict
     ):
         self.start = int(start_time * fps)
         self.end = int(end_time * fps)
+
+        effect = subtitle_settings.pop("effect", None)
+        effect_params = subtitle_settings.pop("effect_params", [])
 
         self.subtitle = TextSubtitle(text, words, width, height, **subtitle_settings)
 
@@ -185,12 +202,12 @@ class FragmentSubtitle:
 class SubtitleStream:
     def __init__(
             self, segments: list[dict], width: int, height: int, fps: float,
-            subtitle_settings: dict, effect=None, effect_params: dict = None
+            subtitle_settings: dict
     ):
         self.segments = [
             FragmentSubtitle(
                 seg["start"], seg["end"], width, height, fps, seg["text"], seg["words"],
-                subtitle_settings, effect, effect_params
+                subtitle_settings.copy()
             )
             for seg in segments
         ]
