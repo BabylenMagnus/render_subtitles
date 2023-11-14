@@ -12,7 +12,7 @@ class TextSubtitle:
             self, text: str, words: list[dict], width: int, height: int, x_spacing: float, width_part: float,
             font: str, fontsize: float, color: list = [255, 255, 255, 255], second_color: list = [0, 128, 0, 255],
             stroke_color: list = [0, 0, 0, 255], stroke: bool = False, stroke_part: float = 1.4, h_space: int = 0.005,
-            rotation_degrees: float = 0.0, uppercase: bool = False, font_variation: str = None
+            rotation_degrees: float = 0.0, uppercase: bool = False, font_variation: str = None, scale_value: float = 1.0
     ):
         self.text = text.upper() if uppercase else text
         self.words = words
@@ -46,6 +46,7 @@ class TextSubtitle:
         self.text_height = None
 
         self.rotation_degrees = rotation_degrees
+        self.scale_value = scale_value
         self.calculate_pieces()
 
     def set_font(self, font_path=None, font_size=None, font_variation=None):
@@ -109,22 +110,18 @@ class TextSubtitle:
         dynamic heights.
         """
         txt_layer = Image.new("RGBA", img.size, (255, 255, 255, 0))
-        draw = ImageDraw.Draw(txt_layer)
 
-        y = self.y_start
-
-        if self.rotation_degrees != 0:
-            rotated_img = Image.new(
-                'RGBA',
-                (self.width_text, int(self.text_height + self.text_height * self.stroke_part * 2)),
-                (255, 255, 255, 0)
-            )
-            rotated_draw = ImageDraw.Draw(rotated_img)
-            y = 0
+        rotated_img = Image.new(
+            'RGBA',
+            (self.width_text, int(self.text_height + self.text_height * self.stroke_part * 3)),
+            (255, 255, 255, 0)
+        )
+        rotated_draw = ImageDraw.Draw(rotated_img)
+        y = 0
 
         for temp_text, w, h in self.pieces:
 
-            left, top, right, bottom = draw.textbbox(
+            left, top, right, bottom = rotated_draw.textbbox(
                 (0, 0), temp_text.replace(SPLIT_CHAR, ""), font=self.font,
                 stroke_width=int(self.font_size * self.stroke_part * int(self.stroke))
             )
@@ -134,27 +131,25 @@ class TextSubtitle:
             w_start = x
 
             for i, t in enumerate(temp_text.split(SPLIT_CHAR)):
-                left, top, right, bottom = draw.textbbox((0, 0), t, font=self.font)
+                left, top, right, bottom = rotated_draw.textbbox((0, 0), t, font=self.font)
 
-                if self.rotation_degrees != 0:
-                    rotated_draw.text(
-                        (w_start, y), t, font=self.font, fill=tuple([self.color, self.second_color][i % 2]),
-                        stroke_fill=tuple(self.stroke_color),
-                        stroke_width=int(self.font_size * self.stroke_part * int(self.stroke))
-                    )
-                else:
-                    draw.text(
-                        (w_start, y), t, font=self.font, fill=tuple([self.color, self.second_color][i % 2]),
-                        stroke_fill=tuple(self.stroke_color),
-                        stroke_width=int(self.font_size * self.stroke_part * int(self.stroke))
-                    )
+                rotated_draw.text(
+                    (w_start, y), t, font=self.font, fill=tuple([self.color, self.second_color][i % 2]),
+                    stroke_fill=tuple(self.stroke_color),
+                    stroke_width=int(self.font_size * self.stroke_part * int(self.stroke))
+                )
                 w_start += right - left
 
             y += h + self.h_space
 
-        if self.rotation_degrees != 0:
+        if self.rotation_degrees != 1.0:
             rotated_img = rotated_img.rotate(self.rotation_degrees, expand=1)
-            txt_layer.paste(rotated_img, (0, self.x_spacing - rotated_img.size[1] // 2), rotated_img)
+        if self.scale_value != 1.0:
+            rotated_img = rotated_img.resize(
+                (int(rotated_img.size[0] * self.scale_value), int(rotated_img.size[1] * self.scale_value))
+            )
+
+        txt_layer.paste(rotated_img, (0, self.x_spacing - rotated_img.size[1] // 2), rotated_img)
 
         img = Image.alpha_composite(img, txt_layer)
 

@@ -49,6 +49,7 @@ def render_subtitles(
 if __name__ == '__main__':
     from themes import THEMES
     import json
+    import time
 
     test_video_path = "test_video/IMG_2073.MOV"
     out_video_path = "test_video/test_24.mp4"
@@ -62,7 +63,8 @@ if __name__ == '__main__':
     #     result["data"]["segments"], test_video_path, out_video_path, preset,
     #     fade_effect, {"fadein": 0.1, "fadeout": 0.1}
     # )
-
+    start_time = time.time()
     render_subtitles(
         result["data"]["segments"], test_video_path, out_video_path, preset
     )
+    print(time.time() - start_time)

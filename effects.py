@@ -1,12 +1,11 @@
 import random
 import numpy as np
-from PIL import ImageFont
 
 from core import TextSubtitle
 from config import SPLIT_CHAR
 
 
-__all__ = ['fade_effect', 'bouncing_effect', 'words_lead_effect', 'rotation_effect']
+__all__ = ['fade_effect', 'bouncing_effect', 'words_lead_effect', 'rotation_effect', 'increase_effect']
 
 
 def fade_effect(
@@ -45,9 +44,9 @@ def bouncing_effect(
 
     def effect(i, subtitle: TextSubtitle):
         if start <= i < start + bounce_up:
-            subtitle.set_font(font_size=subtitle.font_size * bounce_up_list[i - start])
+            subtitle.scale_value = bounce_up_list[i - start]
         if end - bounce_normal <= i < end:
-            subtitle.set_font(font_size=subtitle.font_size * bounce_normal_list[i - (end - bounce_normal)])
+            subtitle.scale_value = bounce_normal_list[i - (end - bounce_normal)]
         return subtitle
 
     return effect
@@ -91,3 +90,14 @@ def rotation_effect(
 
     return effect
 
+
+def increase_effect(
+        start: int, end: int, fps: int, start_font: float = 0.8, end_font: float = 1.2
+):
+    increase_list = np.linspace(start_font, end_font, end - start + 1)
+
+    def effect(i, subtitle: TextSubtitle):
+        subtitle.scale_value = increase_list[i - start]
+        return subtitle
+
+    return effect
