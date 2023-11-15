@@ -53,20 +53,30 @@ def bouncing_effect(
 
 
 def words_lead_effect(
-        start: int, end: int, fps: int, karaoke: bool = False
+        start: int, end: int, fps: int, karaoke: bool = False, pieces: bool = False
 ):
+    if pieces and karaoke:
+        pieces = False
+
     def effect(i, subtitle: TextSubtitle):
         out_text = []
         w = [word["word"].strip() for word in subtitle.words]
-
         for piece_ in subtitle.pieces:
             piece_ = piece_[0].replace(SPLIT_CHAR, "").split()
-            start_i, end_i = w.index(piece_[0]), w.index(piece_[-1]) + 1
+
+            start_i, end_i = w.index(piece_[0]), w.index(piece_[-1])
             out_text.append("")
 
-            for word in subtitle.words[start_i: end_i]:
-                if word["start"] * fps <= i:
-                    if i <= word["end"] * fps or karaoke:
+            if not (
+                    subtitle.words[start_i]["start"] * fps <= i <=
+                    subtitle.words[min(end_i, len(subtitle.words) - 1)]["end"] * fps
+            ):
+                out_text[-1] = " ".join(piece_)
+                continue
+
+            for word in subtitle.words[start_i: end_i + 1]:
+                if pieces or word["start"] * fps <= i:
+                    if pieces or i <= word["end"] * fps or karaoke:
                         out_text[-1] += SPLIT_CHAR + word["word"] + SPLIT_CHAR
                 else:
                     out_text[-1] += word["word"]

@@ -52,17 +52,12 @@ if __name__ == '__main__':
     import time
 
     test_video_path = "test_video/IMG_2073.MOV"
-    out_video_path = "test_video/test_24.mp4"
+    out_video_path = "test_video/test_25.mp4"
     result_path = "test_video/test_2.json"
     with open(result_path, "r") as t:
         result = json.load(t)
 
-    preset = THEMES["HORMOZI 1"]
-
-    # render_subtitles(n
-    #     result["data"]["segments"], test_video_path, out_video_path, preset,
-    #     fade_effect, {"fadein": 0.1, "fadeout": 0.1}
-    # )
+    preset = THEMES["HORMOZI 2"]
     start_time = time.time()
     render_subtitles(
         result["data"]["segments"], test_video_path, out_video_path, preset

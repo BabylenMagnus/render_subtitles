@@ -18,7 +18,7 @@ class TextSubtitle:
         self.words = words
         if uppercase:
             for word in words:
-                word["text"] = word["word"].upper()
+                word["word"] = word["word"].upper()
         self.width_text = int(width * width_part)
 
         self.stroke = stroke
