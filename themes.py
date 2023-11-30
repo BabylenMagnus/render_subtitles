@@ -6,7 +6,7 @@ THEMES = {
         "font": "RubikWetPaint-Regular.ttf",
         "fontsize": 0.03,
         "width_part": 0.9,
-        "x_spacing": 0.1,
+        "y_spacing": 0.1,
         "stroke": True,
         "stroke_part": 0.2,
         "rotation_degrees": 0,
@@ -19,7 +19,7 @@ THEMES = {
     "HORMOZI 1": {
         "font": "Montserrat-VariableFont_wght.ttf",
         "fontsize": 0.03,
-        "x_spacing": 0.3,
+        "y_spacing": 0.3,
         "uppercase": True,
         "width_part": 0.9,
         "font_variation": "ExtraBold",
@@ -34,15 +34,40 @@ THEMES = {
     "HORMOZI 2": {
         "font": "Montserrat-VariableFont_wght.ttf",
         "fontsize": 0.03,
-        "x_spacing": 0.3,
+        "y_spacing": 0.3,
         "uppercase": True,
         "width_part": 0.9,
         "font_variation": "ExtraBold",
         "stroke": True,
         "stroke_part": 0.17,
+        "second_color": [
+            [0, 40, 255],
+            [50, 205, 50],
+            [27, 255, 238]
+        ],
         "effect": [words_lead_effect],
         "effect_params": [
             {"pieces": True}
+        ]
+    },
+    "HORMOZI 3": {
+        "font": "Montserrat-VariableFont_wght.ttf",
+        "fontsize": 0.03,
+        "y_spacing": 0.3,
+        "uppercase": True,
+        "width_part": 0.9,
+        "font_variation": "ExtraBold",
+        "stroke": True,
+        "stroke_part": 0.08,
+        "second_color": [
+            [0, 40, 255],
+            [50, 205, 50],
+            [27, 255, 238]
+        ],
+        "effect": [words_lead_effect, bouncing_effect],
+        "effect_params": [
+            {"pieces": True},
+            {"bounce_up": 0.05, "bounce_normal": 0.1, "maximum_font": 1.1, "minimum_font": 0.8, "end_font": 1.0}
         ]
     }
 }

@@ -9,7 +9,7 @@ class TextSubtitle:
     font: None
 
     def __init__(
-            self, text: str, words: list[dict], width: int, height: int, x_spacing: float, width_part: float,
+            self, text: str, words: list[dict], width: int, height: int, y_spacing: float, width_part: float,
             font: str, fontsize: float, color: list = [255, 255, 255, 255], second_color: list = [0, 128, 0, 255],
             stroke_color: list = [0, 0, 0, 255], stroke: bool = False, stroke_part: float = 1.4, h_space: int = 0.005,
             rotation_degrees: float = 0.0, uppercase: bool = False, font_variation: str = None, scale_value: float = 1.0
@@ -27,7 +27,7 @@ class TextSubtitle:
         self.width = width
         self.height = height
 
-        self.x_spacing = height - int(x_spacing * height)
+        self.y_spacing = height - int(y_spacing * height)
 
         self.font_path = os.path.join(FONT_PATH, font)
         self.font_size = int(height * fontsize)
@@ -101,7 +101,7 @@ class TextSubtitle:
         self.pieces = list(self.break_fix(self.text, draw))
         self.pieces = [list(i) for i in self.pieces]
         self.text_height = sum(p[2] for p in self.pieces)
-        self.y_start = self.x_spacing - self.text_height
+        self.y_start = self.y_spacing - self.text_height
 
     def fit_text(self, img):
         """
@@ -113,7 +113,10 @@ class TextSubtitle:
 
         rotated_img = Image.new(
             'RGBA',
-            (self.width_text, int(self.text_height + self.text_height * self.stroke_part * 3)),
+            (
+                int(max(x[1] for x in self.pieces) * 1.2),
+                int((self.text_height + self.text_height * self.stroke_part) * 1.5)
+            ),
             (255, 255, 255, 0)
         )
         rotated_draw = ImageDraw.Draw(rotated_img)
@@ -125,9 +128,7 @@ class TextSubtitle:
                 (0, 0), temp_text.replace(SPLIT_CHAR, ""), font=self.font,
                 stroke_width=int(self.font_size * self.stroke_part * int(self.stroke))
             )
-            x = (self.width_text - (right - left)) // 2 if self.rotation_degrees != 0 else (
-                    (img.size[0] - (right - left)) // 2
-            )
+            x = (rotated_img.size[0] - (right - left)) // 2
             w_start = x
 
             for i, t in enumerate(temp_text.split(SPLIT_CHAR)):
@@ -149,7 +150,11 @@ class TextSubtitle:
                 (int(rotated_img.size[0] * self.scale_value), int(rotated_img.size[1] * self.scale_value))
             )
 
-        txt_layer.paste(rotated_img, (0, self.x_spacing - rotated_img.size[1] // 2), rotated_img)
+        txt_layer.paste(
+            rotated_img,
+            ((txt_layer.size[0] - rotated_img.size[0]) // 2, self.y_spacing - rotated_img.size[1] // 2),
+            rotated_img
+        )
 
         img = Image.alpha_composite(img, txt_layer)
 
@@ -199,28 +204,28 @@ class SubtitleStream:
             self, segments: list[dict], width: int, height: int, fps: float,
             subtitle_settings: dict
     ):
-        self.segments = [
-            FragmentSubtitle(
-                seg["start"], seg["end"], width, height, fps, seg["text"], seg["words"],
-                subtitle_settings.copy()
+        color = subtitle_settings.pop("color", [255, 255, 255, 255])
+        second_color = subtitle_settings.pop("second_color", [0, 128, 0, 255])
+
+        self.segments = []
+
+        for i, seg in enumerate(segments):
+            subtitle_settings["color"] = color[i % len(color)] if isinstance(color[0], list) else color
+            subtitle_settings["second_color"] = second_color[i % len(second_color)] \
+                if isinstance(second_color[0], list) else second_color
+
+            self.segments.append(
+                FragmentSubtitle(
+                    seg["start"], seg["end"], width, height, fps, seg["text"], seg["words"],
+                    subtitle_settings.copy()
+                )
             )
-            for seg in segments
-        ]
+
         self.index = 0
         self.current_sub = self.segments[0]
         self.segments.remove(self.current_sub)
 
-    def __call__(self, frame: np.array):
-        if self.current_sub is None:
-            return frame
-
-        self.index += 1
-        frame = self.current_sub(self.index, frame)
-
-        if self.current_sub.end < self.index:
-
-            self.current_sub = self.segments[0] if len(self.segments) else None
-            if self.current_sub is not None:
-                self.segments.remove(self.current_sub)
-
-        return frame
+    def get_sub(self, index: int):
+        for current_sub in self.segments:
+            if current_sub.start <= index <= current_sub.end:
+                return current_sub
