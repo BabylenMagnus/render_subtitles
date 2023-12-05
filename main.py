@@ -63,24 +63,11 @@ def write_thread(output_video, out_queue: queue.Queue, length):
         if i >= length:
             break
 
-        # if out_frames[0][0] == i:
-        #     for last_i, (j, frame) in enumerate(out_frames):
-        #         if j == i:
-        #             output_video.write(frame)
-        #             i += 1
-        #         else:
-        #             break
-        
-        #     print(len(out_frames), last_i)
-        #     for _ in range(last_i + 1):
-        #         del out_frames[0]
-
 
 def render_subtitles(
         segments: list[dict], video_input_path: str,
         video_output_path: str, subtitle_settings: dict
 ):
-    segments = fix_words(segments)
     vid_capture = cv2.VideoCapture(video_input_path)
     width = int(vid_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(vid_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -111,7 +98,6 @@ def render_subtitles(
             main_queue.put((i, frame))
             i += 1
             if main_queue.qsize() > 500:
-                print("SLEEP", main_queue.qsize())
                 time.sleep(0.1)
         else:
             break
